@@ -1,52 +1,49 @@
-//server ko create krna
 
-const express =require("express")
-//notes app : we use rest api method so that update, delete and add
-const app=express()
-const notes=[]
+const express=require('express')
+const noteModel=require("./models/note.model")
+//create schema. means visualisation of data
+const app=express();
 
-app.use(express.json()) //middleware
-//data from postman to body ,to make readable for express
+// use asunc await fo mongodb method
+app.use(express.json())
+app.post("/notes",async(req,res)=>{
+    const data=req.body
 
-//use post to share data to server
-app.post('/notes',(req,res)=>{ //for take notes from user use req
-    console.log(req.body);
-    //jb v tmhe req.body chahiye then use middleware  express.json()
-
-    notes.push(req.body)
-    res.status(201).json({
-         message:"note created successfully"
-    }) //201: new resources created success
+    await noteModel.create({
+        title:data.title,
+        description:data.description
+    })
+    res.status(201).send({message:"Notes created"})
 })
 
-app.get('/notes',(req,res)=>{
+app.get("/notes",async(req,res)=>{
+    const notes=await noteModel.find() //find return array => [{} {}] / []
+    // const notes=await noteModel.findOne({ //returns one under condition otherwise null  {}/null
+    //     title:"test_title2"
+    // })
     res.status(200).json({
         message:"notes fetched successfully",
         notes:notes
     })
 })
 
-//  delete /notes/:index = dynamic index
-app.delete('/notes/:index',(req,res)=>{
-    const idx=req.params.index
-
-    delete notes[idx]
+app.delete("/notes/:id",async(req,res)=>{
+    const id=req.params.id
+    await noteModel.findOneAndDelete({
+        _id:id   //because _id saves in database server
+    })
     res.status(200).json({
-
-        message:"note deleted successfully"
+        message:"Note deleted successfully"
     })
 })
 
-//patch: to update prev data
-app.patch('/notes/:index',(req,res)=>{
-    const idx= req.params.index
+app.patch("/notes/:id",async(req,res)=>{
+    const id=req.params.id
     const desc=req.body.description
-    const title=req.body.title
 
-    notes[idx].title=req.body.title
-    notes[idx].description=desc
+    await noteModel.findByIdAndUpdate({_id:id},{description:desc})
     res.status(200).json({
-        message:"note updated successfully"
+        message:"Notes updated successfully"
     })
 })
-module.exports =app
+module.exports=app
